@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hackernewclonedb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hackernewclone-network
+
+networks:
+  hackernewclone-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
