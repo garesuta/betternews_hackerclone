@@ -1,3 +1,6 @@
+import z from "zod";
+
+// types that can shared both front, back
 export type SuccessResponse<T= void> = {
     success: true;
     message: string;
@@ -9,3 +12,8 @@ export type ErrorResponse = {
     isFormError?: boolean;
     
 };
+
+export const loginSchema = z.object({
+    username : z.string().min(3).max(31).regex(/^[a-zA-Z0-9_]+$/),
+    password : z.string().min(3).max(255)
+});
