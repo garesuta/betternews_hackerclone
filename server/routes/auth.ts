@@ -1,6 +1,6 @@
 import { db } from "@/adapter";
 import type { Context } from "@/context";
-import { userTable } from "@/db/schema";
+import { userTable } from "@/db/schema/auth";
 import { lucia } from "@/lucia";
 import { loggedIn } from "@/middleware/loggedIn";
 import { loginSchema, type SuccessResponse } from "@/shared/types";

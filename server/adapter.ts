@@ -2,7 +2,7 @@ import { DrizzlePostgreSQLAdapter } from "@lucia-auth/adapter-drizzle";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import z from "zod";
-import { sessionTable, userTable } from "./db/schema";
+import { sessionTable, userTable } from "./db/schema/auth";
 
 const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
