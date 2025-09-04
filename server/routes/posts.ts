@@ -18,15 +18,7 @@ import type {
   SuccessResponse,
 } from "@/shared/types";
 import { zValidator } from "@hono/zod-validator";
-import {
-  and,
-  asc,
-  countDistinct,
-  desc,
-  eq,
-  isNull,
-  sql,
-} from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
@@ -310,39 +302,153 @@ export const postRouter = new Hono<Context>()
           ),
         );
 
-      const comments = await db.query.comments.findMany({
-        where: and(
-          eq(commentsTable.postId, id),
-          isNull(commentsTable.parentCommentId),
-        ),
-        orderBy: sortOrder,
-        limit: limit,
-        offset: offset,
-        with: {
-          author: {
-            columns: {
-              username: true,
-              id: true,
-            },
-          },
-          childComments: {
-            limit: includeChildren ? 2 : 0,
-            with: {
-              author: {
-                columns: {
-                  username: true,
-                  id: true,
-                },
-              },
-            },
-          },
-        },
-        extras: {
+      // Build the base query for top-level comments
+      const baseQuery = db
+        .select({
+          id: commentsTable.id,
+          userId: commentsTable.userId,
+          postId: commentsTable.postId,
+          content: commentsTable.content,
+          depth: commentsTable.depth,
+          parentCommentId: commentsTable.parentCommentId,
           createdAt: getISOFormatDateQuery(commentsTable.createdAt).as(
             "created_at",
           ),
-        },
-      });
+          commentCount: commentsTable.commentCount,
+          points: commentsTable.points,
+          author: {
+            username: userTable.username,
+            id: userTable.id,
+          },
+          isUpvoted: user
+            ? sql<boolean>`CASE WHEN ${commentUpvotesTable.userId} IS NOT NULL THEN true ELSE false END`
+            : sql<boolean>`false`,
+        })
+        .from(commentsTable)
+        .leftJoin(userTable, eq(commentsTable.userId, userTable.id))
+        .where(
+          and(
+            eq(commentsTable.postId, id),
+            isNull(commentsTable.parentCommentId),
+          ),
+        )
+        .orderBy(sortOrder)
+        .limit(limit)
+        .offset(offset);
+
+      // Add upvote join if user is logged in
+      if (user) {
+        baseQuery.leftJoin(
+          commentUpvotesTable,
+          and(
+            eq(commentUpvotesTable.commentId, commentsTable.id),
+            eq(commentUpvotesTable.userId, user.id),
+          ),
+        );
+      }
+
+      const topLevelComments = await baseQuery;
+
+      // If includeChildren is true, fetch all child comments for the post
+      if (includeChildren && topLevelComments.length > 0) {
+        // Fetch ALL comments for this post (not just the top-level ones)
+        const allCommentsQuery = db
+          .select({
+            id: commentsTable.id,
+            userId: commentsTable.userId,
+            postId: commentsTable.postId,
+            content: commentsTable.content,
+            depth: commentsTable.depth,
+            parentCommentId: commentsTable.parentCommentId,
+            createdAt: getISOFormatDateQuery(commentsTable.createdAt).as(
+              "created_at",
+            ),
+            commentCount: commentsTable.commentCount,
+            points: commentsTable.points,
+            author: {
+              username: userTable.username,
+              id: userTable.id,
+            },
+            isUpvoted: user
+              ? sql<boolean>`CASE WHEN ${commentUpvotesTable.userId} IS NOT NULL THEN true ELSE false END`
+              : sql<boolean>`false`,
+          })
+          .from(commentsTable)
+          .leftJoin(userTable, eq(commentsTable.userId, userTable.id))
+          .where(eq(commentsTable.postId, id))
+          .orderBy(asc(commentsTable.createdAt));
+
+        // Add upvote join if user is logged in
+        if (user) {
+          allCommentsQuery.leftJoin(
+            commentUpvotesTable,
+            and(
+              eq(commentUpvotesTable.commentId, commentsTable.id),
+              eq(commentUpvotesTable.userId, user.id),
+            ),
+          );
+        }
+
+        const allComments = await allCommentsQuery;
+
+        // Create a map for quick lookup and add childComments array to each
+        const commentsMap = new Map();
+        allComments.forEach((comment) => {
+          commentsMap.set(comment.id, {
+            ...comment,
+            childComments: [],
+            commentUpvotes: [], // We'll populate this separately if needed
+          });
+        });
+
+        // Recursive function to build the tree structure
+        const buildCommentTree = (parentId: number | null): any[] => {
+          return allComments
+            .filter((comment) => comment.parentCommentId === parentId)
+            .map((comment) => {
+              const commentWithChildren = commentsMap.get(comment.id);
+              commentWithChildren.childComments = buildCommentTree(comment.id);
+              return commentWithChildren;
+            });
+        };
+
+        // Build the tree structure for top-level comments only (since pagination applies to top-level)
+        const comments = topLevelComments.map((topLevelComment) => {
+          const commentWithChildren = commentsMap.get(topLevelComment.id);
+          if (commentWithChildren) {
+            commentWithChildren.childComments = buildCommentTree(
+              topLevelComment.id,
+            );
+            return commentWithChildren;
+          }
+          // Fallback if not found in allComments
+          return {
+            ...topLevelComment,
+            childComments: [],
+            commentUpvotes: [],
+          };
+        });
+
+        return c.json<PaginatedResponse<Comment[]>>(
+          {
+            success: true,
+            message: "Comments fetched",
+            data: comments as unknown as Comment[],
+            pagination: {
+              page,
+              totalPages: Math.ceil((count?.count ?? 0) / limit) as number,
+            },
+          },
+          200,
+        );
+      }
+
+      // If includeChildren is false, return just the top-level comments
+      const comments = topLevelComments.map((comment) => ({
+        ...comment,
+        childComments: [],
+        commentUpvotes: [], // We'll populate this separately if needed
+      }));
       return c.json<PaginatedResponse<Comment[]>>(
         {
           success: true,
@@ -356,52 +462,54 @@ export const postRouter = new Hono<Context>()
         200,
       );
     },
-  ).get("/:id",zValidator("param",z.object({id:z.coerce.number()})),
-  async (c) =>{
-    const user = c.get("user");
-
-    const {id} = c.req.valid("param");
-    const postsQuery = db
-    .select({
-      id: postsTable.id,
-      title: postsTable.title,
-      url: postsTable.url,
-      points: postsTable.points,
-      createdAt: getISOFormatDateQuery(postsTable.createdAt),
-      commentCount: postsTable.commentCount,
-      author: {
-        username: userTable.username,
-        id: userTable.id,
-      },
-      isUpvoted: user
-        ? sql<boolean>`CASE WHEN ${postUpvotesTable.userId} IS NOT NULL THEN true ELSE false END`
-        : sql<boolean>`false`,
-    })
-    .from(postsTable)
-    .leftJoin(userTable, eq(postsTable.userId, userTable.id))
-    .where(
-      eq(postsTable.id, id)
-    );
-
-  if (user) {
-    postsQuery.leftJoin(
-      postUpvotesTable,
-      and(
-        eq(postUpvotesTable.postId, postsTable.id),
-        eq(postUpvotesTable.userId, user.id),
-      ),
-    );
-  }
-  const [post] = await postsQuery
-  if(!post){
-    throw new HTTPException(404,{message:"Post not found"});
-  }
-  return c.json<SuccessResponse<Post>>({
-    success: true,
-    message: "Post Fetched",
-    data: post as Post
-  },
-    200
   )
-  }
-)
+  .get(
+    "/:id",
+    zValidator("param", z.object({ id: z.coerce.number() })),
+    async (c) => {
+      const user = c.get("user");
+
+      const { id } = c.req.valid("param");
+      const postsQuery = db
+        .select({
+          id: postsTable.id,
+          title: postsTable.title,
+          url: postsTable.url,
+          points: postsTable.points,
+          createdAt: getISOFormatDateQuery(postsTable.createdAt),
+          commentCount: postsTable.commentCount,
+          author: {
+            username: userTable.username,
+            id: userTable.id,
+          },
+          isUpvoted: user
+            ? sql<boolean>`CASE WHEN ${postUpvotesTable.userId} IS NOT NULL THEN true ELSE false END`
+            : sql<boolean>`false`,
+        })
+        .from(postsTable)
+        .leftJoin(userTable, eq(postsTable.userId, userTable.id))
+        .where(eq(postsTable.id, id));
+
+      if (user) {
+        postsQuery.leftJoin(
+          postUpvotesTable,
+          and(
+            eq(postUpvotesTable.postId, postsTable.id),
+            eq(postUpvotesTable.userId, user.id),
+          ),
+        );
+      }
+      const [post] = await postsQuery;
+      if (!post) {
+        throw new HTTPException(404, { message: "Post not found" });
+      }
+      return c.json<SuccessResponse<Post>>(
+        {
+          success: true,
+          message: "Post Fetched",
+          data: post as Post,
+        },
+        200,
+      );
+    },
+  );

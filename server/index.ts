@@ -6,6 +6,7 @@ import { cors } from "hono/cors";
 import type { Context } from "./context";
 import { authRouter } from "./routes/auth";
 import { postRouter } from "./routes/posts";
+import { commentsRouter } from "./routes/comments";
 
 const app = new Hono<Context>();
 
@@ -35,7 +36,8 @@ app.use("*", cors(), async (c, next) => {
 const routes = app
   .basePath("/api")
   .route("/auth", authRouter)
-  .route("/posts", postRouter);
+  .route("/posts", postRouter)
+  .route("/comments", commentsRouter);
 
 app.onError((err, c) => {
   if (err instanceof HTTPException) {

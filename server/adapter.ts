@@ -5,7 +5,7 @@ import z from "zod";
 import { sessionTable, userRelations, userTable } from "./db/schema/auth";
 import { postsRelations, postsTable } from "./db/schema/posts";
 import { commentRelations, commentsTable } from "./db/schema/comments";
-import { commentUpvotesTable, postUpvotesTable } from "./db/schema/upvotes";
+import { commentUpvotesTable, commentUpvotesRelations, postUpvotesTable, postUpvotesRelations } from "./db/schema/upvotes";
 
 const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -22,10 +22,12 @@ const db = drizzle(queryClient, {
     posts: postsTable,
     comments: commentsTable,
     postUpvotes: postUpvotesTable,
-    commentUpvoted: commentUpvotesTable,
+    commentUpvotes: commentUpvotesTable,
     postsRelations,
     commentRelations,
     userRelations,
+    postUpvotesRelations,
+    commentUpvotesRelations,
   },
 });
 

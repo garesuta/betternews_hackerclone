@@ -85,6 +85,7 @@ export type Comment = {
     username: string;
     id: string;
   };
+  isUpvoted?: boolean;
   childComments?: Comment[];
 };
 

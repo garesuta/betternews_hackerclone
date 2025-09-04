@@ -11,11 +11,11 @@ export const commentsTable = pgTable("comments", {
   userId: text("user_id").notNull(),
   postId: integer("post_id").notNull(),
   parentCommentId: integer("parent_comment_id"),
-  content: text("contet").notNull(),
-  createdAt: timestamp("created)_at", { withTimezone: true })
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  depth: integer("dept").default(0).notNull(),
+  depth: integer("depth").default(0).notNull(),
   commentCount: integer("comment_count").default(0).notNull(),
   points: integer("points").default(0).notNull(),
 });
@@ -38,7 +38,7 @@ export const commentRelations = relations(commentsTable, ({ one, many }) => ({
     fields: [commentsTable.postId],
     references: [postsTable.id],
   }),
-  commentUpvotes: many(commentUpvotesTable, { relationName: "commentUpvotes" }),
+  commentUpvotes: many(commentUpvotesTable),
 }));
 
 export const insertCommentsSchema = createInsertSchema(commentsTable, {
