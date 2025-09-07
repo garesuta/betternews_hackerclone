@@ -402,7 +402,7 @@ export const postRouter = new Hono<Context>()
         });
 
         // Recursive function to build the tree structure
-        const buildCommentTree = (parentId: number | null): any[] => {
+        const buildCommentTree = (parentId: number | null): Comment[] => {
           return allComments
             .filter((comment) => comment.parentCommentId === parentId)
             .map((comment) => {

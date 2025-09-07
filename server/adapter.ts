@@ -5,7 +5,12 @@ import z from "zod";
 import { sessionTable, userRelations, userTable } from "./db/schema/auth";
 import { postsRelations, postsTable } from "./db/schema/posts";
 import { commentRelations, commentsTable } from "./db/schema/comments";
-import { commentUpvotesTable, commentUpvotesRelations, postUpvotesTable, postUpvotesRelations } from "./db/schema/upvotes";
+import {
+  commentUpvotesTable,
+  commentUpvotesRelations,
+  postUpvotesTable,
+  postUpvotesRelations,
+} from "./db/schema/upvotes";
 
 const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
