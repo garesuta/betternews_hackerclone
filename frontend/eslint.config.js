@@ -1,6 +1,6 @@
 import globals from "globals";
 import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
+import tseslint, { config } from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 // import tailwindcss from "eslint-plugin-tailwindcss";
 import tanstackQuery from "@tanstack/eslint-plugin-query";
@@ -24,6 +24,10 @@ export default tseslint.config(
       react: {
         version: "detect",
       },
+      tailwindcss: {
+        config: "./tailwind.config.js",
+        callees: ["cn", "cva"],
+      }
     },
   },
   // Base configs
