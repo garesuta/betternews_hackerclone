@@ -40,6 +40,7 @@ export const commentUpvotesRelations = relations(
     user: one(userTable, {
       fields: [commentUpvotesTable.userId],
       references: [userTable.id],
+      relationName: "commentUpvotes",
     }),
     comment: one(commentsTable, {
       fields: [commentUpvotesTable.commentId],

@@ -1,6 +1,9 @@
-import { insertCommentsSchema } from "@/db/schema/comments";
-import { insertPostsSchema } from "@/db/schema/posts";
+import { insertCommentsSchema } from "../server/db/schema/comments";
+import { insertPostsSchema } from "../server/db/schema/posts";
 import z from "zod";
+import type { ApiRoutes } from "../server/index";
+
+export { type ApiRoutes }
 
 // types that can shared both front, back
 export type SuccessResponse<T = void> = {

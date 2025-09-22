@@ -1,11 +1,15 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { Outlet, createRootRoute, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Header } from "@/components/site-header";
+import { Toaster } from "@/components/ui/sonner";
+import { QueryClient } from "@tanstack/react-query";
 
-export const Route = createRootRoute({
-  component: RootComponent,
-});
+interface RouterContext {
+  queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({ component: RootComponent });
 
 function RootComponent() {
   return (
@@ -19,6 +23,7 @@ function RootComponent() {
           <p className="text-sm text-muted-foreground">BetterNews&copy;</p>
         </footer>
       </div>
+      <Toaster />
       <ReactQueryDevtools />
       <TanStackRouterDevtools position="bottom-left" />
     </>
