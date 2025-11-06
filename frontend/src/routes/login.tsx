@@ -1,4 +1,11 @@
-import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
+import { zodSearchValidator } from "@tanstack/router-zod-adapter";
 import { z } from "zod";
 import { useForm } from "@tanstack/react-form";
 import { loginSchema } from "@/shared/types";
@@ -17,19 +24,18 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 const loginSearchSchema = z.object({
-  redirect: z.string().optional().default("/")
-
+  redirect: z.string().optional().default("/"),
 });
 
 export const Route = createFileRoute("/login")({
   component: () => <Login />,
-  validateSearch: (search) => loginSearchSchema.parse(search),
+  validateSearch: zodSearchValidator(loginSearchSchema),
   beforeLoad: async ({ context, search }) => {
     const user = await context.queryClient.ensureQueryData(userQueryOptions());
     if (user) {
-      throw redirect({ to: search.redirect })
+      throw redirect({ to: search.redirect });
     }
-  }
+  },
 });
 
 function Login() {
@@ -52,8 +58,8 @@ function Login() {
         await queryClient.invalidateQueries({ queryKey: ["user"] });
         router.invalidate();
         await navigate({
-          to: search.redirect
-        })
+          to: search.redirect,
+        });
         return null;
       } else {
         if (!res.isFormError) {
@@ -61,9 +67,9 @@ function Login() {
         }
         return {
           form: res.isFormError ? res.error : "Unexpected error",
-        }
+        };
       }
-    }
+    },
   });
 
   return (
@@ -87,9 +93,7 @@ function Login() {
               <form.Field name="username">
                 {(field) => (
                   <div className="grid gap-2">
-                    <Label htmlFor={field.name}>
-                      Username
-                    </Label>
+                    <Label htmlFor={field.name}>Username</Label>
                     <input
                       className="border border-gray-200 rounded-sm"
                       id={field.name}
@@ -105,9 +109,7 @@ function Login() {
               <form.Field name="password">
                 {(field) => (
                   <div className="grid gap-2">
-                    <Label htmlFor={field.name}>
-                      Password
-                    </Label>
+                    <Label htmlFor={field.name}>Password</Label>
                     <input
                       type="password"
                       className="border border-gray-200 rounded-sm"
@@ -122,13 +124,17 @@ function Login() {
                 )}
               </form.Field>
               <form.Subscribe selector={(state) => [state.errorMap.onSubmit]}>
-                {([submitError]) => submitError ? (
-                  <p className="text-[0.8rem] font-medium text-destructive">
-                    {submitError}
-                  </p>
-                ) : null}
+                {([submitError]) =>
+                  submitError ? (
+                    <p className="text-[0.8rem] font-medium text-destructive">
+                      {submitError}
+                    </p>
+                  ) : null
+                }
               </form.Subscribe>
-              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
+              >
                 {([canSubmit, isSubmitting]) => (
                   <Button
                     type="submit"
@@ -140,8 +146,12 @@ function Login() {
                 )}
               </form.Subscribe>
             </div>
-            <div className="mt-4 text-center text-sm"> Dont have an account ?
-              <Link to="/signup" search={{}} className="underline">Signup</Link>
+            <div className="mt-4 text-center text-sm">
+              {" "}
+              Dont have an account ?
+              <Link to="/signup" search={{}} className="underline">
+                Signup
+              </Link>
             </div>
           </CardContent>
         </form>

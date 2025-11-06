@@ -27,7 +27,7 @@ export default tseslint.config(
       tailwindcss: {
         config: "./tailwind.config.js",
         callees: ["cn", "cva"],
-      }
+      },
     },
   },
   // Base configs

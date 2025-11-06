@@ -1,11 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
 import { Button } from "./ui/button";
 import { MenuIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { userQueryOptions } from "@/lib/api";
 import { useState } from "react";
-
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +20,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-border/40 bg-primary/95 backdrop-blur supports-[backdrop-filter]:bg-primary/90 text-white">
       <div className="container mx-auto flex items-center justify-between p-4">
         <div className="flex items-center space-x-4">
-          <Link to="/" className="text-xl font-bold">BetterNews</Link>
+          <Link to="/" className="text-xl font-bold">
+            BetterNews
+          </Link>
           <nav className="hidden items-center space-x-4 md:flex">
             <Link className="hover:underline">New</Link>
             <Link className="hover:underline">Top</Link>
@@ -26,60 +34,95 @@ export function Header() {
             <>
               <span>User: {user}</span>
               <Button
-                asChild size={"sm"}
+                asChild
+                size={"sm"}
                 variant="secondary"
                 className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
               >
                 <a href="api/auth/logout">Logout</a>
               </Button>
             </>
-          ) : <Button
-            asChild size={"sm"}
-            variant="secondary"
-            className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
-          >
-            <Link to="/">Login</Link>
-          </Button>}
+          ) : (
+            <Button
+              asChild
+              size={"sm"}
+              variant="secondary"
+              className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
+            >
+              <Link to="/">Login</Link>
+            </Button>
+          )}
         </div>
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="secondary" size="icon" className="md:hidden" >
+            <Button variant="secondary" size="icon" className="md:hidden">
               <MenuIcon className="size-6" />
             </Button>
           </SheetTrigger>
           <SheetContent className="mb-2">
             <SheetHeader>
               <SheetTitle>BetterNews</SheetTitle>
-              <SheetDescription className="sr-only">Navigation</SheetDescription>
+              <SheetDescription className="sr-only">
+                Navigation
+              </SheetDescription>
             </SheetHeader>
             <nav className="flex flex-col space-y-4">
-              <Link onClick={() => setIsOpen(false)} className="hover:underline" to="/">Home</Link>
-              <Link onClick={() => setIsOpen(false)} className="hover:underline" to="/new">New</Link>
-              <Link onClick={() => setIsOpen(false)} className="hover:underline" to="/top">Top</Link>
-              <Link onClick={() => setIsOpen(false)} className="hover:underline" to="/submit">Submit</Link>
+              <Link
+                onClick={() => setIsOpen(false)}
+                className="hover:underline"
+                to="/"
+              >
+                Home
+              </Link>
+              <Link
+                onClick={() => setIsOpen(false)}
+                className="hover:underline"
+                to="/new"
+              >
+                New
+              </Link>
+              <Link
+                onClick={() => setIsOpen(false)}
+                className="hover:underline"
+                to="/top"
+              >
+                Top
+              </Link>
+              <Link
+                onClick={() => setIsOpen(false)}
+                className="hover:underline"
+                to="/submit"
+              >
+                Submit
+              </Link>
               {user ? (
                 <>
                   <span>{user}</span>
                   <Button
-                    asChild size={"sm"}
+                    asChild
+                    size={"sm"}
                     variant="secondary"
                     className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
                   >
                     <a href="api/auth/logout">Logout</a>
                   </Button>
                 </>
-              ) : <Button
-                asChild size={"sm"}
-                variant="secondary"
-                className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
-              >
-                <Link onClick={() => setIsOpen(false)} to="/login">Login</Link>
-              </Button>}
+              ) : (
+                <Button
+                  asChild
+                  size={"sm"}
+                  variant="secondary"
+                  className="bg-secondary-foreground text-primary-foreground hover:bg-secondary-foreground/70"
+                >
+                  <Link onClick={() => setIsOpen(false)} to="/login">
+                    Login
+                  </Link>
+                </Button>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
       </div>
-
     </header>
-  )
+  );
 }

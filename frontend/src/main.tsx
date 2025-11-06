@@ -20,10 +20,12 @@ const router = createRouter({
     <div className="mx-auto mt-8 flex flex-col items-center">
       <Loader2Icon className="mb-4 animate-spin" />
       <p className="text-muted-foreground">Loading...</p>
-    </div>
+    </div>;
   },
   defaultNotFoundComponent: NotFound,
-  defaultErrorComponent: ({ error }) => { return <ErrorComponent error={error} /> }
+  defaultErrorComponent: ({ error }) => {
+    return <ErrorComponent error={error} />;
+  },
 });
 
 // Register things for typesafety

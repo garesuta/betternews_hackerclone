@@ -1,7 +1,6 @@
 import { Link, NotFoundRouteProps } from "@tanstack/react-router";
 import { Button } from "./ui/button";
 
-
 export default function NotFound(props: NotFoundRouteProps) {
   return (
     <div className="flex size-full items-center justify-center p-2 text-xl">

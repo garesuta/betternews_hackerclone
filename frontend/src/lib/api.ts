@@ -1,14 +1,20 @@
-import { hc } from "hono/client"
-import type { ApiRoutes, ErrorResponse, SuccessResponse } from "@/shared/types"
-import { queryOptions } from "@tanstack/react-query"
+import { hc, InferResponseType } from "hono/client";
+import type {
+  ApiRoutes,
+  ErrorResponse,
+  Order,
+  SortBy,
+  SuccessResponse,
+} from "@/shared/types";
+import { queryOptions } from "@tanstack/react-query";
 
-const client = hc<ApiRoutes>("/", {
+const client = hc<ApiRoutes>("", {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
     fetch(input, {
       ...init,
       credentials: "include",
-    })
-}).api
+    }),
+}).api;
 
 // type Test = InferResponseType<typeof client.auth.signup.$post, 404>
 export const postSignup = async (username: string, password: string) => {
@@ -16,35 +22,15 @@ export const postSignup = async (username: string, password: string) => {
     const res = await client.auth.signup.$post({
       form: {
         username,
-        password
-      }
-    })
-
-    // Check if response has content before parsing JSON
-    const text = await res.text()
-    if (!text) {
-      return {
-        success: false as const,
-        error: "Empty response from server",
-        isFormError: false,
-      } as ErrorResponse;
-    }
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (_parseError) {
-      return {
-        success: false as const,
-        error: `Invalid JSON response: ${text}`,
-        isFormError: false,
-      } as ErrorResponse;
-    }
-
+        password,
+      },
+    });
     if (res.ok) {
-      return data as SuccessResponse
+      const data = (await res.json()) as SuccessResponse;
+      return data;
     }
-    return data as ErrorResponse
+    const data = (await res.json()) as unknown as ErrorResponse;
+    return data;
   } catch (e) {
     return {
       success: false as const,
@@ -52,42 +38,23 @@ export const postSignup = async (username: string, password: string) => {
       isFormError: false,
     } as ErrorResponse;
   }
-}
+};
 
 export const postLogin = async (username: string, password: string) => {
   try {
     const res = await client.auth.login.$post({
       form: {
         username,
-        password
-      }
-    })
-
-    // Check if response has content before parsing JSON
-    const text = await res.text()
-    if (!text) {
-      return {
-        success: false as const,
-        error: "Empty response from server",
-        isFormError: false,
-      } as ErrorResponse;
-    }
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (_parseError) {
-      return {
-        success: false as const,
-        error: `Invalid JSON response: ${text}`,
-        isFormError: false,
-      } as ErrorResponse;
-    }
+        password,
+      },
+    });
 
     if (res.ok) {
-      return data as SuccessResponse
+      const data = (await res.json()) as SuccessResponse;
+      return data;
     }
-    return data as ErrorResponse
+    const data = (await res.json()) as unknown as ErrorResponse;
+    return data;
   } catch (e) {
     return {
       success: false as const,
@@ -95,21 +62,110 @@ export const postLogin = async (username: string, password: string) => {
       isFormError: false,
     } as ErrorResponse;
   }
-}
+};
+
+export type GetPostsSuccess = InferResponseType<typeof client.posts.$get>;
+
+export const getPosts = async ({
+  pageParam = 1,
+  pagination,
+  limit = 5,
+}: {
+  pageParam: number;
+  pagination: {
+    sortBy?: SortBy;
+    order?: Order;
+    author?: string;
+    site?: string;
+  };
+  limit?: number;
+}) => {
+  const queryParams = {
+    page: pageParam.toString(),
+    limit: limit.toString(),
+    ...(pagination.sortBy && { sortBy: pagination.sortBy }),
+    ...(pagination.order && { order: pagination.order }),
+    ...(pagination.author && { author: pagination.author }),
+    ...(pagination.site && { site: pagination.site }),
+  };
+
+  const res = await client.posts.$get({
+    query: queryParams,
+  });
+
+  if (!res.ok) {
+    // Read the response body only once
+    try {
+      const responseText = await res.text();
+
+      // If we got a plain text 404, the proxy might not be working
+      if (res.status === 404 && !responseText.startsWith("{")) {
+        throw new Error(
+          "API endpoint not found - make sure backend server is running and Vite proxy is configured correctly",
+        );
+      }
+
+      // Try to parse as JSON
+      try {
+        const data = JSON.parse(responseText) as unknown as ErrorResponse;
+        throw new Error(data.error || `Server error: ${res.status}`);
+      } catch (jsonError) {
+        if (jsonError instanceof SyntaxError) {
+          throw new Error(
+            `Server error: ${res.status} - Response was not JSON: ${responseText.substring(0, 100)}`,
+          );
+        }
+        throw jsonError;
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("API endpoint not found") ||
+        errorMessage.includes("Response was not JSON")
+      ) {
+        throw error;
+      }
+      throw new Error(`Server error: ${res.status} - ${errorMessage}`);
+    }
+  }
+
+  const data = await res.json();
+  return data;
+};
 
 export const getUser = async () => {
   const res = await client.auth.user.$get();
   if (res.ok) {
-    const data = await res.json()
-    return data.data?.username || null;
+    try {
+      const responseText = await res.text();
+      const data = JSON.parse(responseText);
+      return data.data?.username || null;
+    } catch {
+      return null;
+    }
   }
   return null;
-}
+};
 
 export const userQueryOptions = () => {
   return queryOptions({
     queryKey: ["user"],
     queryFn: getUser,
-    staleTime: Infinity
-  })
+    staleTime: Infinity,
+  });
+};
+
+export async function upvotePost(id: string) {
+  const res = await client.posts[":id"].upvote.$post({
+    param: {
+      id,
+    },
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data;
+  }
+  const data = (await res.json()) as unknown as ErrorResponse;
+  throw new Error(data.error);
 }

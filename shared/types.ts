@@ -3,7 +3,7 @@ import { insertPostsSchema } from "../server/db/schema/posts";
 import z from "zod";
 import type { ApiRoutes } from "../server/index";
 
-export { type ApiRoutes }
+export { type ApiRoutes };
 
 // types that can shared both front, back
 export type SuccessResponse<T = void> = {
@@ -44,6 +44,9 @@ export const createPostSchema = insertPostsSchema
 
 export const sortBySchema = z.enum(["points", "recent"]);
 export const orderSchema = z.enum(["asc", "desc"]);
+
+export type SortBy = z.infer<typeof sortBySchema>;
+export type Order = z.infer<typeof orderSchema>;
 
 export const paginationSchema = z.object({
   limit: z.coerce.number().optional().default(1),
