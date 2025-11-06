@@ -5,11 +5,19 @@ import { ChevronUpIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { badgeVariants } from "./ui/badge";
 
-export const PostCard = ({ post, onUpvote }: { post: Post, onUpvote?: (id: number) => void }) => {
+export const PostCard = ({
+  post,
+  onUpvote,
+}: {
+  post: Post;
+  onUpvote?: (id: number) => void;
+}) => {
   return (
     <Card className="flex items-start justify-start pt-3">
       <button
-        onClick={() => { onUpvote?.(post.id); }}
+        onClick={() => {
+          onUpvote?.(post.id);
+        }}
         className={cn(
           "ml-3 flex flex-col items-start justify-center text-muted-foreground hover:text-primary",
           post.isUpvoted ? "text-primary" : "",

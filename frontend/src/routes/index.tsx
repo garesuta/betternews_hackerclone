@@ -54,7 +54,11 @@ function HomeComponent() {
       <div className="space-y-4">
         {data?.pages.map((page) =>
           page.data.map((post) => (
-            <PostCard post={post} key={post.id} onUpvote={() => upvoteMutation.mutate(post.id.toString())} />
+            <PostCard
+              post={post}
+              key={post.id}
+              onUpvote={() => upvoteMutation.mutate(post.id.toString())}
+            />
           )),
         )}
       </div>

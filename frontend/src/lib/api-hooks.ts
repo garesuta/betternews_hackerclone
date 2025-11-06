@@ -63,7 +63,11 @@ export const useUpVotePost = () => {
           );
         }),
       );
-      queryClient.invalidateQueries({ queryKey: ["posts"], type: "inactive", refetchType: "none" });
+      queryClient.invalidateQueries({
+        queryKey: ["posts"],
+        type: "inactive",
+        refetchType: "none",
+      });
     },
     onError: (err, variable, context) => {
       console.error(err);
@@ -72,7 +76,7 @@ export const useUpVotePost = () => {
         queryClient.setQueriesData<InfiniteData<GetPostsSuccess>>(
           {
             queryKey: ["posts"],
-            type: "active"
+            type: "active",
           },
           context.prevData,
         );
